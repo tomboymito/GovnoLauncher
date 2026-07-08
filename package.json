@@ -1,0 +1,23 @@
+{
+  "name": "gornilo-launcher",
+  "version": "0.1.0",
+  "description": "ГОРНИЛО — Minecraft-лаунчер для закрытой группы друзей",
+  "private": true,
+  "main": "./out/main/index.js",
+  "scripts": {
+    "start": "electron-vite dev",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^31.3.0",
+    "electron-vite": "^2.3.0",
+    "vite": "^5.4.0"
+  }
+}
