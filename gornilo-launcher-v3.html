@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>ГОРНИЛО — Лаунчер</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-a:#2A2A2E; --bg-b:#111113;
+    --panel:#18181B; --panel-2:#0A0A0B; --panel-3:#232327;
+    --line: rgba(255,255,255,0.08); --line-2: rgba(255,255,255,0.14);
+    --text:#F3F2EF; --text-mid:#A6A5A2; --text-dim:#66656A;
+    --white-chip:#F3F2EF;
+    --online:#6FBE7E;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:'Inter',sans-serif; color:var(--text);
+    background:
+      radial-gradient(circle at 20% 15%, #38383D 0%, transparent 45%),
+      radial-gradient(circle at 85% 75%, #2C2C31 0%, transparent 50%),
+      linear-gradient(160deg, var(--bg-a), var(--bg-b));
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .frame{ width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; padding:38px; }
+  .screen{ display:none; width:100%; height:100%; max-width:1240px; max-height:800px; }
+  .screen.active{ display:flex; }
+  .panel{
+    width:100%; background:var(--panel); border-radius:26px; border:1px solid var(--line);
+    box-shadow: 0 40px 90px rgba(0,0,0,0.45);
+    display:flex; overflow:hidden;
+  }
+  .eyebrow{ font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-dim); font-weight:600; }
+
+  /* ============ LOGIN ============ */
+  .login-left{ flex:0 0 44%; padding:56px 52px; display:flex; flex-direction:column; justify-content:center; border-right:1px solid var(--line); position:relative; z-index:2; background:var(--panel); }
+  .wordmark{ font-size:34px; font-weight:800; letter-spacing:-0.02em; margin:14px 0 10px; }
+  .tagline{ color:var(--text-mid); font-size:14px; line-height:1.6; max-width:340px; margin-bottom:40px; }
+  .ms-btn{
+    display:flex; align-items:center; gap:12px; background:var(--white-chip); color:#141416;
+    padding:14px 20px; border-radius:12px; cursor:pointer; width:fit-content; font-weight:600; font-size:14px;
+    transition:transform .12s, opacity .12s;
+  }
+  .ms-btn:hover{ transform:translateY(-1px); opacity:.92; }
+  .ms-logo{ display:grid; grid-template-columns:1fr 1fr; gap:2px; width:16px; height:16px; }
+  .ms-logo div:nth-child(1){ background:#F35325; } .ms-logo div:nth-child(2){ background:#81BC06; }
+  .ms-logo div:nth-child(3){ background:#05A6F0; } .ms-logo div:nth-child(4){ background:#FFBA08; }
+  .login-foot{ margin-top:32px; font-size:11.5px; color:var(--text-dim); line-height:1.6; max-width:320px; }
+
+  .login-right{ flex:1; position:relative; overflow:hidden; background:#000; }
+  #ascii-landscape{
+    font-family:'JetBrains Mono',monospace; white-space:pre; position:absolute; inset:0;
+    font-size:11px; line-height:11px; letter-spacing:0; padding:18px;
+    color:#EDEBE6;
+  }
+  .landscape-fade{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.25) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.35) 100%); pointer-events:none; }
+  .landscape-label{ position:absolute; bottom:22px; left:26px; font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(243,242,239,0.4); z-index:2; }
+
+  /* ============ LOBBY ============ */
+  .sidebar{ flex:0 0 260px; background:var(--panel-3); border-right:1px solid var(--line); padding:22px 16px; display:flex; flex-direction:column; }
+  .profile-row{ display:flex; align-items:center; gap:10px; padding:6px 8px 20px; }
+  .avatar{ width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,#4A4A50,#26262A); flex:0 0 32px; }
+  .profile-name{ font-size:13.5px; font-weight:600; }
+  .profile-sub{ font-size:11px; color:var(--text-dim); }
+
+  .nav-item{ display:flex; align-items:center; gap:11px; padding:10px 10px; border-radius:9px; font-size:13px; color:var(--text-mid); cursor:pointer; margin-bottom:2px; }
+  .nav-item .dot{ width:6px; height:6px; border-radius:2px; background:var(--text-dim); }
+  .nav-item.active{ background:var(--panel-2); color:var(--text); font-weight:600; }
+  .nav-item.active .dot{ background:var(--text); }
+
+  .pack-list{ margin-top:18px; padding-top:16px; border-top:1px solid var(--line); flex:1; overflow-y:auto; }
+  .pack-list-head{ font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-dim); padding:0 8px 10px; font-weight:600; }
+  .pack-item{ padding:11px 10px; border-radius:10px; cursor:pointer; margin-bottom:3px; }
+  .pack-item:hover{ background:var(--panel-2); }
+  .pack-item.selected{ background:var(--panel-2); }
+  .pack-name{ font-size:13px; font-weight:600; margin-bottom:3px; }
+  .pack-meta{ font-size:10.5px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .status-dot{ width:5px; height:5px; border-radius:50%; }
+  .status-dot.installed{ background:var(--online); }
+  .status-dot.missing{ background:var(--text-dim); }
+  .status-dot.updating{ background:#D8B36A; }
+
+  .main{ flex:1; padding:34px 40px; overflow-y:auto; background:var(--panel); }
+  .main-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; }
+  .main-title{ font-size:26px; font-weight:700; margin-top:6px; }
+  .chip{ background:var(--panel-3); border:1px solid var(--line-2); padding:7px 13px; border-radius:20px; font-size:12px; font-weight:600; color:var(--text-mid); }
+
+  .grid{ display:grid; grid-template-columns:1.4fr 1fr; gap:18px; }
+  .card{ background:var(--panel-3); border:1px solid var(--line); border-radius:16px; padding:20px; }
+  .card-label{ font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim); font-weight:600; margin-bottom:14px; }
+
+  .bars{ display:flex; align-items:flex-end; gap:5px; height:90px; margin-top:6px; }
+  .bar{ flex:1; background:linear-gradient(180deg,#EDEBE6,#B9B7B2); border-radius:3px 3px 0 0; opacity:.85; }
+
+  .stat-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px; }
+  .stat-card{ background:var(--panel-3); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .stat-num{ font-size:20px; font-weight:700; margin-top:8px; }
+  .stat-sub{ font-size:10.5px; color:var(--text-dim); margin-top:2px; }
+
+  .progress-list{ margin-top:6px; }
+  .progress-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; }
+  .progress-label{ font-size:12px; color:var(--text-mid); flex:0 0 120px; }
+  .progress-track{ flex:1; height:4px; background:var(--panel-2); border-radius:4px; overflow:hidden; }
+  .progress-fill{ height:100%; background:var(--text); border-radius:4px; }
+
+  .server-pill{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-mid); }
+  .pulse{ width:6px; height:6px; border-radius:50%; background:var(--online); box-shadow:0 0 0 0 rgba(111,190,126,.5); animation:pulse 2s infinite; }
+  @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(111,190,126,.5);} 70%{box-shadow:0 0 0 6px rgba(111,190,126,0);} 100%{box-shadow:0 0 0 0 rgba(111,190,126,0);} }
+
+  .btn-row{ display:flex; gap:8px; margin-top:18px; }
+  .btn{ font-size:12.5px; font-weight:600; padding:10px 16px; border-radius:10px; border:1px solid var(--line-2); background:var(--panel-2); color:var(--text); cursor:pointer; }
+  .btn-primary{ background:var(--white-chip); color:#141416; border-color:var(--white-chip); }
+
+  .map-card{ position:relative; height:210px; border-radius:16px; overflow:hidden; border:1px solid var(--line); margin-top:18px; background:#0E0E10; }
+  .map-fog{ position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size:18px 18px; }
+  .map-explored{ position:absolute; border-radius:50%; background:radial-gradient(circle, rgba(243,242,239,0.10) 0%, rgba(243,242,239,0.05) 40%, transparent 72%); }
+  .map-marker{ position:absolute; width:7px; height:7px; border-radius:50%; background:var(--text); box-shadow:0 0 0 3px rgba(243,242,239,0.14); }
+  .map-title-row{ position:absolute; top:12px; left:14px; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <!-- ============ SCREEN 1: LOGIN ============ -->
+  <div id="screen-login" class="screen active">
+    <div class="panel">
+      <div class="login-left">
+        <div class="eyebrow">Твои сборки · твои миры</div>
+        <div class="wordmark">Горнило</div>
+        <div class="tagline">Один вход — все сборки. Играй локально или подключайся к постоянным серверам друзей.</div>
+        <div class="ms-btn" onclick="goToLobby()">
+          <div class="ms-logo"><div></div><div></div><div></div><div></div></div>
+          Войти через Microsoft
+        </div>
+        <div class="login-foot">Подтягиваем ник и лицензию из аккаунта Microsoft. Пароль нигде не хранится — только защищённый токен на этом устройстве.</div>
+      </div>
+      <div class="login-right">
+        <pre id="ascii-landscape"></pre>
+        <div class="landscape-fade"></div>
+        <div class="landscape-label">мир · ночь · сгенерировано локально</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 2: LOBBY ============ -->
+  <div id="screen-lobby" class="screen">
+    <div class="panel">
+      <div class="sidebar">
+        <div class="profile-row">
+          <div class="avatar"></div>
+          <div><div class="profile-name">Maksim_K</div><div class="profile-sub">В сети</div></div>
+        </div>
+        <div class="nav-item active"><div class="dot"></div>Сборки</div>
+        <div class="nav-item"><div class="dot"></div>Друзья</div>
+        <div class="nav-item"><div class="dot"></div>Карта</div>
+        <div class="nav-item"><div class="dot"></div>Настройки</div>
+
+        <div class="pack-list">
+          <div class="pack-list-head">Сборки · 3</div>
+          <div id="pack-list-items"></div>
+        </div>
+      </div>
+
+      <div class="main" id="main"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ ASCII LANDSCAPE GENERATOR ============ */
+function buildLandscape(cols, rows){
+  const grid = Array.from({length: rows}, () => new Array(cols).fill(' '));
+  const opac = Array.from({length: rows}, () => new Array(cols).fill(1));
+
+  // --- 1. blocky stepped horizon (left ~60% of width, Minecraft-cliff style) ---
+  const baseline = Math.floor(rows * 0.62);
+  let h = baseline - 8;
+  const heights = new Array(cols).fill(baseline);
+  let run = 0;
+  for (let c = 0; c < Math.floor(cols*0.62); c++){
+    if (run <= 0){
+      h += (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random()*2)) * 2;
+      h = Math.max(baseline - 22, Math.min(baseline - 2, h));
+      run = 2 + Math.floor(Math.random()*5);
+    }
+    run--;
+    heights[c] = h;
+  }
+  // --- 2. rolling treeline (right ~40%, denser, bumpy) ---
+  let t = baseline - 4;
+  for (let c = Math.floor(cols*0.60); c < cols; c++){
+    t += Math.floor(Math.random()*3) - 1;
+    t = Math.max(baseline - 12, Math.min(baseline + 1, t));
+    heights[c] = t;
+  }
+
+  const edgeChars = ['.', ':', "'", '`', ',', '"'];
+  const hatchChars = ['x', '×', '/', '\\', '.', ':'];
+
+  for (let c = 0; c < cols; c++){
+    const hc = heights[c];
+    const hprev = c > 0 ? heights[c-1] : hc;
+
+    // vertical step face when height jumps between columns (cliff edge)
+    if (hc !== hprev){
+      const top = Math.min(hc, hprev), bot = Math.max(hc, hprev);
+      for (let r = top; r <= bot; r++){
+        if (Math.random() < 0.75) grid[r][c] = hatchChars[Math.floor(Math.random()*hatchChars.length)];
+      }
+    }
+    // top edge line of terrain, dotted
+    for (let r = hc; r <= hc+1; r++){
+      if (r>=0 && r<rows && Math.random() < 0.7){
+        grid[r][c] = edgeChars[Math.floor(Math.random()*edgeChars.length)];
+      }
+    }
+    // sparse fill just under the surface, fading to black
+    for (let r = hc+2; r < rows; r++){
+      const depth = r - hc;
+      const p = Math.max(0, 0.22 - depth*0.02);
+      if (Math.random() < p) grid[r][c] = '.';
+    }
+  }
+
+  // --- 3. bush/tree canopy clusters on the right ---
+  const clusterCount = 5 + Math.floor(Math.random()*3);
+  for (let i=0; i<clusterCount; i++){
+    const cx = Math.floor(cols*0.6 + Math.random()*cols*0.4);
+    const cy = baseline - Math.floor(Math.random()*5);
+    const rad = 3 + Math.floor(Math.random()*4);
+    for (let dy=-rad; dy<=rad; dy++){
+      for (let dx=-rad*2; dx<=rad*2; dx++){
+        const r = cy+dy, cc = cx+dx;
+        if (r<0||r>=rows||cc<0||cc>=cols) continue;
+        const dist = Math.sqrt((dx/2)*(dx/2) + dy*dy);
+        if (dist < rad && Math.random() < (1 - dist/rad)*0.8){
+          grid[r][cc] = hatchChars[Math.floor(Math.random()*hatchChars.length)];
+        }
+      }
+    }
+  }
+
+  // --- 4. stars in the sky ---
+  for (let r = 0; r < rows; r++){
+    for (let c = 0; c < cols; c++){
+      if (grid[r][c] !== ' ') continue;
+      const skyDepth = 1 - r/rows;
+      const p = 0.012 * skyDepth;
+      if (Math.random() < p){
+        grid[r][c] = Math.random() < 0.7 ? 'x' : '.';
+        opac[r][c] = 0.35 + Math.random()*0.65;
+      }
+    }
+  }
+
+  return {grid, opac};
+}
+
+function renderLandscape(){
+  const el = document.getElementById('ascii-landscape');
+  const cols = 100, rows = 46;
+  const {grid, opac} = buildLandscape(cols, rows);
+  let html = '';
+  for (let r = 0; r < rows; r++){
+    for (let c = 0; c < cols; c++){
+      const ch = grid[r][c];
+      if (ch === ' '){ html += ' '; continue; }
+      html += `<span style="opacity:${opac[r][c].toFixed(2)}">${ch}</span>`;
+    }
+    html += '\n';
+  }
+  el.innerHTML = html;
+}
+
+/* ============ LOBBY DATA ============ */
+const packs = [
+  { id:'tech-magic', name:'Tech & Magic', version:'1.0.0', mcVersion:'1.16.5 Forge', status:'installed', size:'5.2 GB', mods:214,
+    desc:'Mekanism, Create, Botania, Blood Magic, Astral Sorcery, Ice and Fire — техно-магическое RPG с квестами.',
+    online:5, cap:8, techProgress:72, magicProgress:45, bars:[40,55,30,70,45,60,80,50,65,35,90,55,40,70,60,45,75,55,65,50] },
+  { id:'vanilla-plus', name:'Vanilla+', version:'2.0.0', mcVersion:'1.20.1 Forge', status:'missing', size:'8.7 GB', mods:62,
+    desc:'Лёгкая сборка без RPG-механик: улучшения ландшафта, QoL-моды, честный ванильный геймплей.',
+    online:0, cap:10, techProgress:0, magicProgress:0, bars:[10,15,10,20,15,10,25,15,20,10,15,20,10,25,15,10,20,15,10,15] },
+  { id:'skyblock-rpg', name:'Skyblock RPG', version:'1.5.1', mcVersion:'1.19.2 Forge', status:'updating', size:'3.2 GB', mods:96,
+    desc:'Островной выживач с прокачкой навыков и торговлей между островами.',
+    online:2, cap:6, techProgress:28, magicProgress:60, bars:[20,30,25,40,35,20,45,30,25,40,30,50,35,20,40,30,45,25,35,30] }
+];
+let selected = packs[0].id;
+const statusLabel = s => ({ installed:'Установлено', missing:'Не установлено', updating:'Обновляется…' })[s];
+
+function renderList(){
+  document.getElementById('pack-list-items').innerHTML = packs.map(p => `
+    <div class="pack-item ${p.id===selected?'selected':''}" onclick="selectPack('${p.id}')">
+      <div class="pack-name">${p.name}</div>
+      <div class="pack-meta"><span class="status-dot ${p.status}"></span>${statusLabel(p.status)} · ${p.mcVersion}</div>
+    </div>`).join('');
+}
+
+function renderMain(){
+  const p = packs.find(x => x.id === selected);
+  const btn = p.status==='installed' ? '<div class="btn btn-primary">Играть</div><div class="btn">Обновить</div>'
+            : p.status==='missing' ? '<div class="btn btn-primary">Скачать</div>'
+            : '<div class="btn" style="opacity:.5;">Идёт загрузка…</div>';
+
+  document.getElementById('main').innerHTML = `
+    <div class="main-head">
+      <div>
+        <div class="eyebrow">${p.mcVersion} · v${p.version}</div>
+        <div class="main-title">${p.name}</div>
+      </div>
+      <div class="chip">${p.mods} модов</div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-label">Активность сервера · 20 дней</div>
+        <div class="bars">${p.bars.map(h => `<div class="bar" style="height:${h}%"></div>`).join('')}</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Прогресс веток</div>
+        <div class="progress-list">
+          <div class="progress-row"><div class="progress-label">Tech</div><div class="progress-track"><div class="progress-fill" style="width:${p.techProgress}%"></div></div></div>
+          <div class="progress-row"><div class="progress-label">Magic</div><div class="progress-track"><div class="progress-fill" style="width:${p.magicProgress}%"></div></div></div>
+        </div>
+        <div style="margin-top:14px;" class="server-pill"><span class="pulse"></span>${p.online} / ${p.cap} игроков онлайн</div>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-card"><div class="card-label">Размер</div><div class="stat-num">${p.size}</div><div class="stat-sub">на диске</div></div>
+      <div class="stat-card"><div class="card-label">Статус</div><div class="stat-num" style="font-size:15px;">${statusLabel(p.status)}</div><div class="stat-sub">${p.id}.gornilo.ru</div></div>
+      <div class="stat-card"><div class="card-label">Игроков</div><div class="stat-num">${p.online}/${p.cap}</div><div class="stat-sub">сейчас на сервере</div></div>
+    </div>
+
+    <div class="map-card">
+      <div class="map-title-row">Карта мира · только прогруженная территория</div>
+      <div class="map-fog"></div>
+      <div class="map-explored" style="width:220px;height:220px;top:20px;left:60px;"></div>
+      <div class="map-explored" style="width:130px;height:130px;top:60px;left:260px;"></div>
+      <div class="map-marker" style="top:110px;left:150px;"></div>
+      <div class="map-marker" style="top:80px;left:300px;"></div>
+    </div>
+
+    <div class="btn-row">${btn}</div>
+  `;
+}
+
+function selectPack(id){ selected = id; renderList(); renderMain(); }
+function goToLobby(){
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('screen-lobby').classList.add('active');
+}
+
+renderLandscape();
+renderList();
+renderMain();
+</script>
+</body>
+</html>
