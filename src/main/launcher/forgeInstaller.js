@@ -1,4 +1,5 @@
 import { existsSync } from 'fs'
+import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { spawn } from 'child_process'
 import { downloadFile } from './downloader.js'
@@ -14,6 +15,17 @@ async function fetchSha1(url) {
   const response = await fetch(`${url}.sha1`)
   if (!response.ok) return null
   return (await response.text()).trim()
+}
+
+// The Forge installer's client-install step refuses to run unless it finds a
+// launcher_profiles.json in the target dir (its heuristic for "this is a real
+// .minecraft folder"). We never run the vanilla launcher there, so seed a
+// minimal stub ourselves — its content is otherwise unused by us.
+async function ensureLauncherProfilesStub() {
+  const path = join(runtimeRoot(), 'launcher_profiles.json')
+  if (existsSync(path)) return
+  await mkdir(runtimeRoot(), { recursive: true })
+  await writeFile(path, JSON.stringify({ profiles: {}, settings: {}, version: 3 }), 'utf-8')
 }
 
 function runJava(args, { onLog } = {}) {
@@ -58,6 +70,8 @@ export async function ensureForgeInstalled(mcVersion, forgeVersion, { onLog } = 
   onLog?.(`Скачиваем установщик Forge: ${installerUrl}`)
   const sha1 = await fetchSha1(installerUrl)
   await downloadFile(installerUrl, installerPath, { sha1 })
+
+  await ensureLauncherProfilesStub()
 
   onLog?.('Запускаем установку Forge (headless)...')
   await runJava(['-jar', installerPath, '--installClient', runtimeRoot()], { onLog })
