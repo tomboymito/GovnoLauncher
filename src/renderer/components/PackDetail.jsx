@@ -21,7 +21,7 @@ function ActionButtons({ status }) {
 
 export default function PackDetail({ pack }) {
   return (
-    <div className="main">
+    <>
       <div className="main-head">
         <div>
           <div className="eyebrow">
@@ -98,6 +98,6 @@ export default function PackDetail({ pack }) {
       <div className="btn-row">
         <ActionButtons status={pack.status} />
       </div>
-    </div>
+    </>
   )
 }

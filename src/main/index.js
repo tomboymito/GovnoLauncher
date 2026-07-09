@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { registerLauncherIpc } from './ipc/launcher.js'
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -10,6 +11,7 @@ function createWindow() {
     backgroundColor: '#111113',
     autoHideMenuBar: true,
     webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false
     }
@@ -23,6 +25,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  registerLauncherIpc()
   createWindow()
 
   app.on('activate', () => {

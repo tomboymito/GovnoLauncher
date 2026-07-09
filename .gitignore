@@ -1,6 +1,12 @@
 node_modules/
 out/
 dist/
-packs/
 *.log
 .DS_Store
+
+# Local pack cache is not versioned, except the Phase 2 test-pack fixture
+# (its pack.json + empty mods/ dir, so the JVM test-launch pipeline is testable).
+packs/*
+!packs/test-pack/
+packs/test-pack/mods/*
+!packs/test-pack/mods/.gitkeep
