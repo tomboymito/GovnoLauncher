@@ -28,9 +28,9 @@ async function ensureLauncherProfilesStub() {
   await writeFile(path, JSON.stringify({ profiles: {}, settings: {}, version: 3 }), 'utf-8')
 }
 
-function runJava(args, { onLog } = {}) {
+function runJava(javaBin, args, { onLog } = {}) {
   return new Promise((resolve, reject) => {
-    const proc = spawn('java', args, { stdio: ['ignore', 'pipe', 'pipe'] })
+    const proc = spawn(javaBin, args, { stdio: ['ignore', 'pipe', 'pipe'] })
 
     const forwardLines = (stream) => {
       let buffer = ''
@@ -55,7 +55,7 @@ function runJava(args, { onLog } = {}) {
 // Ensures the Forge patched client + libraries are installed in runtimeRoot(),
 // which has the same versions/libraries layout as a real .minecraft directory.
 // Skips the (slow) installer run if the target version was already installed.
-export async function ensureForgeInstalled(mcVersion, forgeVersion, { onLog } = {}) {
+export async function ensureForgeInstalled(mcVersion, forgeVersion, javaBin, { onLog } = {}) {
   const versionId = forgeVersionId(mcVersion, forgeVersion)
   const versionJsonPath = join(versionsDir(), versionId, `${versionId}.json`)
   if (existsSync(versionJsonPath)) {
@@ -74,7 +74,7 @@ export async function ensureForgeInstalled(mcVersion, forgeVersion, { onLog } = 
   await ensureLauncherProfilesStub()
 
   onLog?.('Запускаем установку Forge (headless)...')
-  await runJava(['-jar', installerPath, '--installClient', runtimeRoot()], { onLog })
+  await runJava(javaBin, ['-jar', installerPath, '--installClient', runtimeRoot()], { onLog })
 
   if (!existsSync(versionJsonPath)) {
     throw new Error(`Установщик Forge завершился успешно, но ${versionId}.json не найден`)

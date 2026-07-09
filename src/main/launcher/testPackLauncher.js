@@ -4,9 +4,10 @@ import { join } from 'path'
 import { fetchVersionJson, downloadClientJar } from './mojangManifest.js'
 import { downloadLibraries } from './libraries.js'
 import { downloadAssets } from './assets.js'
-import { ensureForgeInstalled, forgeVersionId } from './forgeInstaller.js'
+import { ensureForgeInstalled } from './forgeInstaller.js'
 import { resolveVersion } from './versionResolve.js'
 import { buildLaunchArgs, spawnGame } from './launch.js'
+import { findCompatibleJava } from './javaLocator.js'
 import { nativesDir, assetsDir, packDir, packsRoot } from './paths.js'
 
 const TEST_USERNAME = 'Gornilo_Player'
@@ -36,6 +37,10 @@ export async function launchTestPack({ onLog, onProgress, onExit }) {
   onLog('Получаю манифест версии Mojang...')
   const vanillaJson = await fetchVersionJson(mcVersion)
 
+  const requiredJavaMajor = vanillaJson.javaVersion?.majorVersion || 17
+  onLog(`Ищу подходящую Java (нужна ${requiredJavaMajor}+)...`)
+  const javaBin = await findCompatibleJava(requiredJavaMajor, { onLog })
+
   onLog('Скачиваю библиотеки Minecraft...')
   await downloadLibraries(vanillaJson.libraries, {
     nativesOutDir: nativesDir(mcVersion),
@@ -50,7 +55,7 @@ export async function launchTestPack({ onLog, onProgress, onExit }) {
     onProgress: (p) => onProgress?.({ stage: 'assets', ...p })
   })
 
-  const forgeId = await ensureForgeInstalled(mcVersion, forgeVersion, { onLog })
+  const forgeId = await ensureForgeInstalled(mcVersion, forgeVersion, javaBin, { onLog })
 
   onLog('Собираю итоговую версию (Forge + vanilla)...')
   const versionSpec = await resolveVersion(forgeId)
@@ -75,5 +80,5 @@ export async function launchTestPack({ onLog, onProgress, onExit }) {
   })
 
   onLog(`Запускаю Minecraft (${forgeId}) из ${gameDir}...`)
-  return spawnGame(javaArgs, { gameDir, onLog, onExit })
+  return spawnGame(javaBin, javaArgs, { gameDir, onLog, onExit })
 }

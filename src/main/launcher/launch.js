@@ -96,10 +96,10 @@ export function buildLaunchArgs(versionSpec, options) {
 }
 
 // Spawns the java process, streaming stdout/stderr line-by-line into onLog.
-export async function spawnGame(javaArgs, { gameDir, onLog, onExit }) {
+export async function spawnGame(javaBin, javaArgs, { gameDir, onLog, onExit }) {
   await mkdir(gameDir, { recursive: true })
 
-  const proc = spawn('java', javaArgs, { cwd: gameDir, stdio: ['ignore', 'pipe', 'pipe'] })
+  const proc = spawn(javaBin, javaArgs, { cwd: gameDir, stdio: ['ignore', 'pipe', 'pipe'] })
 
   const forwardLines = (stream) => {
     let buffer = ''
