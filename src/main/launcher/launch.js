@@ -93,6 +93,10 @@ export function buildLaunchArgs(versionSpec, options) {
   return [
     `-Xms${memoryMinMb}M`,
     `-Xmx${memoryMaxMb}M`,
+    // TEMP: BootstrapLauncher-internal diagnostics for the library-scan/merge
+    // step, to see exactly what it's looking for before it throws. Remove once
+    // the launch pipeline is stable.
+    '-Dbsl.debug=true',
     ...jvmArgs,
     versionSpec.mainClass,
     ...gameArgs
