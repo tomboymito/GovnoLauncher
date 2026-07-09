@@ -57,7 +57,13 @@ export function buildLaunchArgs(versionSpec, options) {
     memoryMaxMb = 4096
   } = options
 
-  const classpath = buildClasspath(versionSpec.libraries, [clientJarPath])
+  // Modern modular Forge (mainClass = BootstrapLauncher, jvm args carry `-p`)
+  // ships its own split derivatives of the client jar (…-slim/-extra/-srg.jar)
+  // as regular libraries. Adding the plain vanilla client jar on top makes two
+  // different "minecraft" modules export the same packages, which JPMS module
+  // resolution rejects outright. Only a plain (non-Forge) launch needs it.
+  const isModularForge = (versionSpec.arguments?.jvm || []).includes('-p')
+  const classpath = buildClasspath(versionSpec.libraries, isModularForge ? [] : [clientJarPath])
   const placeholders = {
     natives_directory: nativesDirPath,
     launcher_name: 'gornilo-launcher',
