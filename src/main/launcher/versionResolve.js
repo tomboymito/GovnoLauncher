@@ -22,26 +22,6 @@ function dedupeLibraries(libraries) {
   return result
 }
 
-// Modern (1.17+) Forge puts every library on the JPMS module path (`-p`) instead
-// of the classpath. If we kept vanilla's own `-cp ${classpath}` too, the same
-// jars would sit on both paths — the JVM then resolves those classes through
-// the classpath's unnamed module, so Forge's own module (cpw.mods.securejarhandler)
-// never actually resolves and `--add-opens`/`--add-exports` targeting it silently
-// no-ops, crashing with InaccessibleObjectException at startup.
-function stripClasspathArg(jvmArgs) {
-  const idx = jvmArgs.indexOf('-cp')
-  if (idx === -1) return jvmArgs
-  const copy = [...jvmArgs]
-  copy.splice(idx, 2)
-  return copy
-}
-
-function mergeJvmArgs(parentJvm, childJvm) {
-  const usesModulePath = (childJvm || []).includes('-p')
-  const base = usesModulePath ? stripClasspathArg(parentJvm || []) : parentJvm || []
-  return [...base, ...(childJvm || [])]
-}
-
 // Recursively resolves the Mojang `inheritsFrom` chain (Forge version -> vanilla
 // version) into a single launch spec: merged libraries, concatenated jvm/game
 // arguments, and the child's mainClass/downloads taking precedence.
@@ -56,7 +36,7 @@ export async function resolveVersion(versionId) {
   const libraries = dedupeLibraries([...(json.libraries || []), ...(parent.libraries || [])])
   const mergedArguments = {
     game: [...(parent.arguments?.game || []), ...(json.arguments?.game || [])],
-    jvm: mergeJvmArgs(parent.arguments?.jvm, json.arguments?.jvm)
+    jvm: [...(parent.arguments?.jvm || []), ...(json.arguments?.jvm || [])]
   }
 
   return {
