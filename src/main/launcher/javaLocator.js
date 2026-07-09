@@ -81,17 +81,29 @@ async function detectMajorVersion(javaBin) {
 }
 
 // Finds a java executable satisfying `requiredMajor` (checks JAVA_HOME, common
-// per-OS install locations, then PATH). Throws a clear, actionable error if none found.
+// per-OS install locations, then PATH). Prefers the closest major version at or
+// above the requirement — modding toolchains (ASM, ModLauncher) are usually only
+// tested against the Java generation current when they shipped, and an unrelated
+// bleeding-edge JVM can break them in subtle ways a "newer is fine" pick would miss.
+// Throws a clear, actionable error if nothing compatible is found.
 export async function findCompatibleJava(requiredMajor, { onLog } = {}) {
+  const viable = []
   for (const bin of candidateBinaries()) {
     const major = await detectMajorVersion(bin)
     if (major == null) continue
     onLog?.(`Найдена Java ${major}: ${bin}`)
-    if (major >= requiredMajor) return bin
+    if (major >= requiredMajor) viable.push({ bin, major })
   }
 
-  throw new Error(
-    `Не найдена подходящая Java (нужна версия ${requiredMajor} или новее). ` +
-      `Установите JDK ${requiredMajor}+ (например, Eclipse Temurin) и повторите запуск.`
-  )
+  if (viable.length === 0) {
+    throw new Error(
+      `Не найдена подходящая Java (нужна версия ${requiredMajor} или новее). ` +
+        `Установите JDK ${requiredMajor}+ (например, Eclipse Temurin) и повторите запуск.`
+    )
+  }
+
+  viable.sort((a, b) => a.major - b.major)
+  const chosen = viable[0]
+  onLog?.(`Использую Java ${chosen.major}: ${chosen.bin}`)
+  return chosen.bin
 }
