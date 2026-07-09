@@ -1,6 +1,8 @@
 import { spawn } from 'child_process'
 import { mkdir } from 'fs/promises'
+import { delimiter } from 'path'
 import { buildClasspath } from './libraries.js'
+import { librariesDir } from './paths.js'
 
 const OS_NAME = { win32: 'windows', darwin: 'osx', linux: 'linux' }[process.platform]
 
@@ -61,6 +63,8 @@ export function buildLaunchArgs(versionSpec, options) {
     launcher_name: 'gornilo-launcher',
     launcher_version: '0.1.0',
     classpath,
+    classpath_separator: delimiter,
+    library_directory: librariesDir(),
     auth_player_name: username,
     version_name: versionSpec.id,
     game_directory: gameDir,
